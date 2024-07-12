@@ -177,8 +177,8 @@ class Transfer:
             line = line.replace(f"{obj}.kill_process(", "Cmd.kill_process(")
 
         for method_name in mk_method_names:
-            if re.findall(rf"[a-zA-Z]+\.{method_name}", line):
-                line = re.sub(rf'[a-zA-Z]+\.{method_name}\(', f"pylinuxauto.{method_name}(",line)
+            if re.findall(rf'[a-zA-Z]\w*\.{method_name}\(', line):
+                line = re.sub(rf'[a-zA-Z]\w*\.{method_name}\(', f"pylinuxauto.{method_name}(", line)
 
         # image
         if re.findall(r"return pylinuxauto.find_element_by_image", line):
