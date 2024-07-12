@@ -1,31 +1,31 @@
 #!/usr/bin/env python3 # pylint: disable=too-many-lines
 # _*_ coding:utf-8 _*_
-
 # SPDX-FileCopyrightText: 2023 UnionTech Software Technology Co., Ltd.
-
 # SPDX-License-Identifier: GPL-2.0-only
-from youqu3.gui import pylinuxauto
+from youqu3.cmd import Cmd
+from config import config
 from youqu3 import setting
 from youqu3 import logger
 from youqu3 import log
 from youqu3 import sleep
+from youqu3.gui import pylinuxauto
 import os
 import re
 import shutil
 
 import dbus
-
-
-    RightMenuPublicMethod,
-)
-from youqu3 import DbusUtils
-from youqu3 import logger, log, ShortCut
+from youqu3 import log
+from youqu3 import logger
+from youqu3 import setting
 from youqu3 import sleep
 from youqu3.exceptions import ApplicationStartError
 from youqu3.exceptions import GetWindowInformation
 from youqu3.exceptions import NoIconOfThisSize
 from youqu3.exceptions import TemplateElementNotFound, ElementNotFound
-from youqu3.wayland_wininfo import WaylandWindowInfo
+from youqu3.gui import pylinuxauto
+from youqu3.gui.pylinuxauto.ui.wayland_windowinfo import WaylandWindowInfo
+
+from right_menu_public_method import RightMenuPublicMethod
 
 
 @log
@@ -46,7 +46,7 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
         kwargs["description"] = self.DESC
         kwargs["check_start"] = True
         kwargs["config_path"] = config.UI_INI_PATH
-        Src.__init__(self, **kwargs)
+
         setattr(self.ui, "window_info", self.window_info)
         if setting.IS_WAYLAND:
             self.retry = 1
@@ -60,7 +60,7 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
         if setting.IS_X11:
             try:
                 # Get window_operate ID based on package name
-                app_id = self.run(
+                app_id = Cmd.run(
                     f"xdotool search --classname --onlyvisible {self.APP_NAME}",
                     interrupt=False,
                     print_log=False,
@@ -84,7 +84,7 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
                     else:
                         # 取最大的
                         actual_id = _win_size[-1][0]
-                return self.run(
+                return Cmd.run(
                     f"xwininfo -id {actual_id}",
                     interrupt=False,
                     print_log=False,
@@ -122,7 +122,7 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
         :return: 窗口大小
         """
         try:
-            app_window_info = cls.run(
+            app_window_info = Cmd.run(
                 f"xwininfo -id {window_id}",
                 interrupt=False,
                 print_log=False,
@@ -143,6 +143,7 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
         :return: 坐标
         """
         from youqu3.desktop import get_desktop_file_location_by_config
+
         return get_desktop_file_location_by_config(name)
 
     def click_file_in_desktop_by_config(self, file_name):
@@ -176,7 +177,7 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
          桌面的dbus对象
         :return: 桌面 dbus 对象
         """
-        return DbusUtils(
+        return Dbus(
             "com.deepin.daemon.Appearance",
             "/com/deepin/daemon/Appearance",
             "com.deepin.daemon.Appearance",
@@ -188,7 +189,7 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
          显示器的dbus对象
         :return:
         """
-        return DbusUtils(
+        return Dbus(
             "com.deepin.daemon.Display",
             "/com/deepin/daemon/Display",
             "com.deepin.daemon.Display",
@@ -202,7 +203,7 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
         :return:
         """
         element = tuple(map(lambda x: f"{config.PIC_RES_PATH}/{x}", elements))
-        return pylinuxauto.find_element_by_image(*element).center()
+        return pylinuxauto.find_element_by_image(*element).center().center()
 
     def double_click_file_in_right_view_by_attr(self, file_name):
         """
@@ -211,7 +212,7 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
         :return:
         """
         pylinuxauto.find_element_by_attr_path(f"$//file_view/{file_name}").point()
-        # self.dog.app_element("right_view").child(file_name).point()   # 多个computer_window定位失败的问题
+        # pylinuxauto.find_element_by_attr_path("right_view").child(file_name).point()   # 多个computer_window定位失败的问题
         pylinuxauto.double_click()
 
     def click_element_in_desktop_by_image(self, *pic):
@@ -256,11 +257,12 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
         """
 
         if flag in ("import", "export"):
-            _x, _y = pylinuxauto.find_element_by_ui(dir_name, offset_y=offset_y, appname="", config_path="").center()
+            _x, _y = pylinuxauto.find_element_by_ui(
+                dir_name, offset_y=offset_y, appname="", config_path=""
+            ).center()
             if flag != "import":
                 _y = _y - 38
             else:
-                from youqu3.ocr_utils import OCRUtils
                 tmp_ = pylinuxauto.find_element_by_ocr("最近使用").center()
                 if tmp_ is False:
                     _y = _y - 40
@@ -275,7 +277,7 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
         :return:
         """
         pylinuxauto.find_element_by_attr_path(f"$//file_view/{filename}").point()
-        # self.dog.app_element('file_view').child(filename).point()
+        # pylinuxauto.find_element_by_attr_path('file_view').child(filename).point()
         pylinuxauto.click()
 
     def double_click_file_in_desktop_plugs_by_attr(self, filename):
@@ -294,9 +296,8 @@ class _DdeDesktopPublicBaseMethod(RightMenuPublicMethod):
         :return:
         """
         pylinuxauto.find_element_by_attr_path(f"$//file_view/{filename}").point()
-        # self.dog.app_element('file_view').child(filename).point()
+        # pylinuxauto.find_element_by_attr_path('file_view').child(filename).point()
         pylinuxauto.right_click()
-
 
 
 class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
@@ -312,28 +313,42 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
          调用文管插件，点击右下角“打开“
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("打开", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui("打开", appname="", config_path="").center()
+        )
 
     def click_cancel_btn_in_desktop_plugs_save_by_ui(self):
         """
          调用文管插件，点击右下角“取消“
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("取消保存", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "取消保存", appname="", config_path=""
+            ).center()
+        )
 
     def click_cancel_btn_in_desktop_plugs_import_by_ui(self):
         """
          调用文管插件，点击右下角“取消“
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("取消打开", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "取消打开", appname="", config_path=""
+            ).center()
+        )
 
     def click_ok_btn_in_pop_up_window_by_ui(self):
         """
          点击小弹窗“确定”按钮
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("关闭弹窗-确定", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "关闭弹窗-确定", appname="", config_path=""
+            ).center()
+        )
 
     def click_ok_btn_in_open_mode_window_by_attr(self):
         """
@@ -341,7 +356,7 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :return:
         """
         # pylinuxauto.click(*pylinuxauto.find_element_by_ui("打开方式-确定", appname="", config_path="").center())
-        self.dog.element_click("确 定")
+        pylinuxauto.find_element_by_attr_path("确 定").click()
 
     def click_cancel_btn_in_open_mode_window_by_ui(self):
         """
@@ -349,21 +364,27 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :return:
         """
         # pylinuxauto.click(*pylinuxauto.find_element_by_ui("打开方式-取消", appname="", config_path="").center())
-        self.dog.element_click("取 消")
+        pylinuxauto.find_element_by_attr_path("取 消").click()
 
     def click_close_btn_in_open_mode_window_by_attr(self):
         """
          点击打开方式小弹窗“关闭”按钮
         :return:
         """
-        pylinuxauto.find_element_by_attr_path("$//DTitlebarButtonArea//DTitlebarDWindowCloseButton").click()
+        pylinuxauto.find_element_by_attr_path(
+            "$//DTitlebarButtonArea//DTitlebarDWindowCloseButton"
+        ).click()
 
     def click_cancel_btn_in_pop_up_window_by_ui(self):
         """
          点击小弹窗的“取消”按钮
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("关闭弹窗-取消", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "关闭弹窗-取消", appname="", config_path=""
+            ).center()
+        )
 
     def click_formate_box_in_desktop_plugs_by_ui(self, flag="import"):
         """
@@ -371,7 +392,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :param flag: import 导入插件框，其他，导出插件框
         :return:
         """
-        _x, _y = pylinuxauto.find_element_by_ui("格式框", appname="", config_path="").center()
+        _x, _y = pylinuxauto.find_element_by_ui(
+            "格式框", appname="", config_path=""
+        ).center()
         if flag != "import":
             _y = _y - 40
         pylinuxauto.click(_x, _y)
@@ -383,7 +406,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :return:
         """
         if flag in ("import", "export"):
-            _x, _y = pylinuxauto.find_element_by_ui("最近使用", appname="", config_path="").center()
+            _x, _y = pylinuxauto.find_element_by_ui(
+                "最近使用", appname="", config_path=""
+            ).center()
             if flag != "import":
                 _x, _y = 0, 0
             pylinuxauto.click(_x, _y)
@@ -420,7 +445,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
             else:
                 break
         pic_path = self.save_temporary_picture(x, y, w, h)
-        if pylinuxauto.find_element_by_ocr("最近使用", picture_abspath=pic_path + ".png"):
+        if pylinuxauto.find_element_by_ocr(
+            "最近使用", picture_abspath=pic_path + ".png"
+        ):
             offset_y = 38
         self.click_dir_in_desktop_plugs_by_ui("视频", flag, offset_y=offset_y)
 
@@ -469,7 +496,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
          调用文管插件，点击右下角“保存“（左右布局）
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("保存", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui("保存", appname="", config_path="").center()
+        )
 
     def click_blank_space_in_desktop_plugs_by_ui(self):
         """
@@ -483,56 +512,88 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
          调用文管插件，点击右下角“图标视图“
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("图标视图", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "图标视图", appname="", config_path=""
+            ).center()
+        )
 
     def click_list_view_btn_in_desktop_plugs_by_ui(self):
         """
          调用文管插件，点击右下角“列表视图“
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("列表视图", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "列表视图", appname="", config_path=""
+            ).center()
+        )
 
     def click_first_file_in_desktop_plugs_by_ui(self):
         """
          调用文管插件，点击“列表视图下第一个文件“
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("列表视图下第一个文件", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "列表视图下第一个文件", appname="", config_path=""
+            ).center()
+        )
 
     def double_click_first_file_in_desktop_plugs_by_ui(self):
         """
          调用文管插件，双击“列表视图下第一个文件“
         :return:
         """
-        pylinuxauto.double_click(*pylinuxauto.find_element_by_ui("列表视图下第一个文件", appname="", config_path="").center())
+        pylinuxauto.double_click(
+            *pylinuxauto.find_element_by_ui(
+                "列表视图下第一个文件", appname="", config_path=""
+            ).center()
+        )
 
     def click_second_file_in_desktop_plugs_by_ui(self):
         """
          调用文管插件，点击右下角“列表视图下第二个文件“
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("列表视图下第二个文件", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "列表视图下第二个文件", appname="", config_path=""
+            ).center()
+        )
 
     def double_click_second_file_in_desktop_plugs_by_ui(self):
         """
          调用文管插件，双击右下角“列表视图下第二个文件“
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("列表视图下第二个文件", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "列表视图下第二个文件", appname="", config_path=""
+            ).center()
+        )
 
     def double_click_third_file_in_desktop_plugs_by_ui(self):
         """
          调用文管插件，双击“列表视图下第三个文件“
         :return:
         """
-        pylinuxauto.double_click(*pylinuxauto.find_element_by_ui("列表视图下第三个文件", appname="", config_path="").center())
+        pylinuxauto.double_click(
+            *pylinuxauto.find_element_by_ui(
+                "列表视图下第三个文件", appname="", config_path=""
+            ).center()
+        )
 
     def click_third_file_in_desktop_plugs_by_ui(self):
         """
          调用文管插件，点击右下角“列表视图下第三个文件“
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("列表视图下第三个文件", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "列表视图下第三个文件", appname="", config_path=""
+            ).center()
+        )
 
     # ============================= 系统桌面 ====================================
 
@@ -556,7 +617,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :return:
         """
         try:
-            self.dog.element_click("screen_canvas_view", button=3)
+            pylinuxauto.find_element_by_attr_path(
+                "screen_canvas_view", button=3
+            ).click()
         except ElementNotFound:
             pylinuxauto.right_click(960, 540)
 
@@ -566,7 +629,7 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :return:
         """
         try:
-            self.dog.element_click("screen_canvas_view")
+            pylinuxauto.find_element_by_attr_path("screen_canvas_view").click()
         except ElementNotFound:
             pylinuxauto.click(960, 540)
 
@@ -576,7 +639,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :return:
         """
         try:
-            desktop_x, desktop_y = pylinuxauto.find_element_by_attr_path("screen_canvas_view").center()
+            desktop_x, desktop_y = pylinuxauto.find_element_by_attr_path(
+                "screen_canvas_view"
+            ).center()
         except ElementNotFound:
             desktop_x, desktop_y = 960, 520
         pylinuxauto.right_click(desktop_x / 4, desktop_y / 4)
@@ -587,7 +652,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :return:
         """
         try:
-            desktop_x, desktop_y = pylinuxauto.find_element_by_attr_path("screen_canvas_view").center()
+            desktop_x, desktop_y = pylinuxauto.find_element_by_attr_path(
+                "screen_canvas_view"
+            ).center()
         except ElementNotFound:
             desktop_x, desktop_y = 960, 520
         pylinuxauto.click(desktop_x / 4, desktop_y / 4)
@@ -606,7 +673,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         """
         # 获取中心坐标
         try:
-            start_x, start_y = pylinuxauto.find_element_by_attr_path("screen_canvas_view").center()
+            start_x, start_y = pylinuxauto.find_element_by_attr_path(
+                "screen_canvas_view"
+            ).center()
         except ElementNotFound:
             start_x, start_y = 960, 520
         pylinuxauto.move_on_and_drag_to((start_x, start_y), (0, 0))
@@ -627,7 +696,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :return:
         """
         try:
-            desktop_x, desktop_y = pylinuxauto.find_element_by_attr_path("screen_canvas_view").center()
+            desktop_x, desktop_y = pylinuxauto.find_element_by_attr_path(
+                "screen_canvas_view"
+            ).center()
         except ElementNotFound:
             desktop_x, desktop_y = 960, 520
         return desktop_x / 2, desktop_y / 2
@@ -857,7 +928,11 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
          点击文件名修改框
         :return:
         """
-        pylinuxauto.click(*pylinuxauto.find_element_by_ui("文件名称编辑框", appname="", config_path="").center())
+        pylinuxauto.click(
+            *pylinuxauto.find_element_by_ui(
+                "文件名称编辑框", appname="", config_path=""
+            ).center()
+        )
 
     def double_click_computer_in_desktop_by_image(self):
         """
@@ -979,7 +1054,7 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
          点击确认窗口中的“清空”
         :return:
         """
-        self.dog.app_element("清空").click()
+        pylinuxauto.find_element_by_attr_path("清空").click()
 
     def right_click_trash_in_desktop_by_image(self):
         """
@@ -1246,7 +1321,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :param name: 文件名
         :return:
         """
-        with open(f"/home/{config.USERNAME}/Desktop/{name}.txt", "w", encoding="utf-8") as file:
+        with open(
+            f"/home/{config.USERNAME}/Desktop/{name}.txt", "w", encoding="utf-8"
+        ) as file:
             file.write(text)
 
     @staticmethod
@@ -1492,11 +1569,11 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
     #     current_workspace = bus.get_current_workspace()
     #     sleep(2)
     #     # 执行聚焦桌面
-    #     self.run(cmd_f, interrupt=False, print_log=False, command_log=False)
+    #     Cmd.run(cmd_f, interrupt=False, print_log=False, command_log=False)
     #     for _ in range(0, int(workspace_count - current_workspace + 1)):
     #         sleep(1)
     #         # 执行快捷键切换工作区
-    #         self.run(
+    #         Cmd.run(
     #             cmd_k, interrupt=False, print_log=False, command_log=False
     #         )
 
@@ -1576,7 +1653,9 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :param text: 文件夹名
         :return:
         """
-        os.system(f"mkdir /home/{config.USERNAME}/Desktop/{text if text else '新建文件夹'}")
+        os.system(
+            f"mkdir /home/{config.USERNAME}/Desktop/{text if text else '新建文件夹'}"
+        )
 
     @staticmethod
     def delete_computer_and_trash_icon_in_desktop_by_cmd():
@@ -1600,7 +1679,7 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :return:
         """
         for i in ["dde-computer.desktop", "dde-trash.desktop"]:
-            cls.run(
+            Cmd.run(
                 f"cp /usr/share/applications/{i} /home/{config.USERNAME}/Desktop/",
                 interrupt=False,
                 print_log=False,
@@ -1646,7 +1725,7 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         :param element: 文件名
         :return:
         """
-        pylinuxauto.find_element_by_attr_path(f"$//file_view/{element}").doubleClick()
+        pylinuxauto.find_element_by_attr_path(f"$//file_view/{element}").double_click()
 
     def click_file_in_desktop_plugs_right_view_by_attr(self, element):
         """
@@ -1659,23 +1738,23 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
     def click_delete_btn_in_dialog_by_attr(self):
         """点击确认窗口中的“确认删除”"""
         try:
-            self.dog.app_element("删 除").click()
+            pylinuxauto.find_element_by_attr_path("删 除").click()
         except ElementNotFound:
-            self.dog.app_element("删除").click()
+            pylinuxauto.find_element_by_attr_path("删除").click()
 
     def click_replace_btn_in_dialog_by_attr(self):
         """点击确认窗口中的“替换”"""
         try:
-            self.dog.app_element("替 换").click()
+            pylinuxauto.find_element_by_attr_path("替 换").click()
         except ElementNotFound:
-            self.dog.app_element("替换").click()
+            pylinuxauto.find_element_by_attr_path("替换").click()
 
     @classmethod
     def build_new_txt_in_desktop_by_cmd(cls, *names):
         """在桌面上新建一个txt"""
         if names:
             for name in names:
-                cls.run(f"touch ~/Desktop/{name}.txt")
+                Cmd.run(f"touch ~/Desktop/{name}.txt")
         sleep(0.5)
 
     @classmethod
@@ -1686,8 +1765,8 @@ class DdeDesktopPublicMethod(_DdeDesktopPublicBaseMethod):
         """
         for _i in range(0, 3):
             cls.build_new_txt_in_desktop_by_cmd(f"{_i + 1}.zip")
-        cls.run(r"cd ~/Desktop &&zip auto.zip *.txt && rm *.txt")
+        Cmd.run(r"cd ~/Desktop &&zip auto.zip *.txt && rm *.txt")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     DdeDesktopPublicMethod().click_open_computer_in_desktop_by_image()

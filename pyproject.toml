@@ -1,0 +1,30 @@
+[project]
+name = "youqu2-transfer-youqu3"
+description = "youqu2-transfer-youqu3"
+authors = [
+    { name = "mikigo", email = "huangmingqiang@uniontech.com" },
+]
+dependencies = [
+    "ruff",
+]
+dynamic = ["version"]
+
+requires-python = ">=3.7"
+readme = "README.md"
+license = { text = "GPL2.0" }
+
+[project.scripts]
+transfer = "transfer.cli:cli"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[tool.hatch]
+version = { path = "transfer/__version__.py" }
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "/transfer",
+]
